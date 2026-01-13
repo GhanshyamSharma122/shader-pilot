@@ -489,8 +489,8 @@ export class SpaceGame {
     }
 
     private updateSpeedLines(delta: number) {
-        const speed = this.player.getVelocity?.() || 0;
-        const boostActive = this.isBoosting && speed > 30;
+        // Speed lines activate when boosting
+        const boostActive = this.isBoosting;
 
         this.speedLines.forEach((line, i) => {
             const mat = line.material as THREE.LineBasicMaterial;
@@ -501,8 +501,9 @@ export class SpaceGame {
 
                 // Move lines toward camera
                 const positions = line.geometry.attributes.position.array as Float32Array;
-                positions[2] += speed * delta * 0.5;
-                positions[5] += speed * delta * 0.5;
+                const boostSpeed = 50; // Speed for animation
+                positions[2] += boostSpeed * delta * 0.5;
+                positions[5] += boostSpeed * delta * 0.5;
 
                 // Reset if too close
                 if (positions[2] > 10) {

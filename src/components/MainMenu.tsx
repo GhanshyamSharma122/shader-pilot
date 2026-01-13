@@ -268,9 +268,45 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onJoin, isConnecting, error 
                             </button>
                         </div>
                         {gameMode === 'practice' && (
-                            <p style={{ color: '#44cc66', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
-                                Fight AI bots to improve your skills!
-                            </p>
+                            <div style={{ marginTop: '12px' }}>
+                                <label style={{ display: 'block', color: '#44cc66', fontSize: '10px', marginBottom: '6px', textAlign: 'center' }}>
+                                    BOT BEHAVIOR
+                                </label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setBotBehavior('aggressive')}
+                                        style={{
+                                            padding: '10px',
+                                            background: botBehavior === 'aggressive' ? 'linear-gradient(135deg, #cc2244, #ff4466)' : 'rgba(30,40,60,0.6)',
+                                            border: botBehavior === 'aggressive' ? '2px solid #ff6688' : '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: '8px',
+                                            color: botBehavior === 'aggressive' ? '#fff' : '#888',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        🔥 AGGRESSIVE
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setBotBehavior('passive')}
+                                        style={{
+                                            padding: '10px',
+                                            background: botBehavior === 'passive' ? 'linear-gradient(135deg, #2266cc, #4488ff)' : 'rgba(30,40,60,0.6)',
+                                            border: botBehavior === 'passive' ? '2px solid #6688ff' : '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: '8px',
+                                            color: botBehavior === 'passive' ? '#fff' : '#888',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        🎯 STATIONARY
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </div>
 
@@ -360,7 +396,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onJoin, isConnecting, error 
                 {/* Controls hint */}
                 <div style={{ marginTop: '20px', textAlign: 'center', color: '#555', fontSize: '11px' }}>
                     <p>WASD move • Mouse aim • Click shoot • 1/2/3 weapons</p>
-                    <p>Q/E roll • Space/Shift up/down • Ctrl boost</p>
+                    <p>Q/E roll • Space/Shift up/down • B boost</p>
                 </div>
             </div>
         </div>

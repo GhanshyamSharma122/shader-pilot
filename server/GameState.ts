@@ -77,6 +77,7 @@ export class GameState {
     // Bot tracking
     private bots: Map<string, BotState> = new Map();
     private botCount = 0;
+    private botsArePassive = false;
 
     constructor(mode: GameMode = 'ffa') {
         this.gameMode = mode;
@@ -107,9 +108,10 @@ export class GameState {
     }
 
     // Enable practice mode with bots
-    enablePracticeMode(numBots: number = 3) {
+    enablePracticeMode(numBots: number = 3, isPassive: boolean = false) {
         this.isPracticeMode = true;
         this.botCount = numBots;
+        this.botsArePassive = isPassive;
 
         // Spawn initial bots
         for (let i = 0; i < numBots; i++) {
@@ -283,7 +285,7 @@ export class GameState {
             const bot = this.players.get(botId);
             if (!bot) return;
 
-            // Handle respawn
+            // Handle respawn (always allow respawn even for passive bots)
             if (!bot.isAlive) {
                 if (botState.respawnTime === 0) {
                     botState.respawnTime = now + 3000; // 3 second respawn
@@ -294,7 +296,13 @@ export class GameState {
                 return;
             }
 
-            // Find nearest human player target
+            // If bots are passive/stationary, skip movement and shooting
+            if (this.botsArePassive) {
+                bot.velocity.x = 0;
+                bot.velocity.y = 0;
+                bot.velocity.z = 0;
+                return;
+            }
             let nearestPlayer: PlayerState | null = null;
             let nearestDistance = Infinity;
 

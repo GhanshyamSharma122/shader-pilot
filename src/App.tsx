@@ -10,6 +10,7 @@ import { GameHUD } from './components/GameHUD';
 import { Minimap } from './components/Minimap';
 import { Leaderboard } from './components/Leaderboard';
 import { ChatPanel } from './components/ChatPanel';
+import { ControlsPanel } from './components/ControlsPanel';
 import { SerializedGameState, PlayerState } from '../shared/Protocol';
 
 // Server URL - change for production
@@ -129,7 +130,7 @@ const App: React.FC = () => {
     }, [gameState]);
 
     // Join game handler
-    const handleJoin = async (playerName: string, mode: 'ffa' | 'team' | 'practice', team?: 'red' | 'blue', shipColor?: string, arena?: string) => {
+    const handleJoin = async (playerName: string, mode: 'ffa' | 'team' | 'practice', team?: 'red' | 'blue', shipColor?: string, arena?: string, botBehavior?: string) => {
         if (!containerRef.current) return;
 
         setIsConnecting(true);
@@ -141,8 +142,8 @@ const App: React.FC = () => {
             const game = new SpaceGame(containerRef.current, createGameCallbacks(), shipColor, arena as any);
             gameRef.current = game;
 
-            // Connect to server with game mode
-            await game.connect(SERVER_URL, playerName, team, mode);
+            // Connect to server with game mode and bot behavior
+            await game.connect(SERVER_URL, playerName, team, mode, botBehavior);
 
             // Start game loop
             game.start();
@@ -234,6 +235,8 @@ const App: React.FC = () => {
                         onSendMessage={handleSendChat}
                         isVisible={true}
                     />
+
+                    <ControlsPanel />
                 </>
             )}
         </div>

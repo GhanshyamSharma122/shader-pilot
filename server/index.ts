@@ -47,7 +47,7 @@ io.on('connection', (socket: Socket<ClientToServerEvents, ServerToClientEvents>)
 
     // Handle player joining
     socket.on('player:join', (data) => {
-        const { name, team, mode } = data as { name: string; team?: 'red' | 'blue'; mode?: string };
+        const { name, team, mode, botBehavior } = data as { name: string; team?: 'red' | 'blue'; mode?: string; botBehavior?: string };
         const playerId = socket.id;
 
         // Add player to game
@@ -56,8 +56,9 @@ io.on('connection', (socket: Socket<ClientToServerEvents, ServerToClientEvents>)
 
         // Enable practice mode with bots if requested
         if (mode === 'practice' && !gameState.isPracticeMode) {
-            console.log('🤖 Enabling practice mode with bots');
-            gameState.enablePracticeMode(3); // Spawn 3 bots
+            const isPassive = botBehavior === 'passive';
+            console.log(`🤖 Enabling practice mode with ${isPassive ? 'STATIONARY' : 'AGGRESSIVE'} bots`);
+            gameState.enablePracticeMode(3, isPassive); // Spawn 3 bots
         }
 
         console.log(`👤 Player joined: ${name} (${playerId}) ${team ? `Team: ${team}` : 'FFA'} ${mode === 'practice' ? '(Practice)' : ''}`);

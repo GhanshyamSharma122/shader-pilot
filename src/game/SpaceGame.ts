@@ -130,6 +130,15 @@ export class SpaceGame {
 
         // Handle window resize
         window.addEventListener('resize', this.onResize.bind(this));
+
+        // Warn before closing tab while playing (Ctrl+W protection)
+        window.addEventListener('beforeunload', (e) => {
+            if (this.isRunning && this.isAlive) {
+                e.preventDefault();
+                e.returnValue = 'You are in a game! Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
     }
 
     private createSpeedLines() {
@@ -275,6 +284,12 @@ export class SpaceGame {
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
 
+            // Prevent browser shortcuts when in-game (pointer locked)
+            // This prevents Ctrl+W from closing the tab, Ctrl+S from saving, etc.
+            if (this.mouseLocked && e.ctrlKey && ['w', 's', 'r', 'q'].includes(key)) {
+                e.preventDefault();
+            }
+
             // Prevent default for game keys
             if (['w', 'a', 's', 'd', ' ', 'q', 'e', 'r', '1', '2', '3'].includes(key)) {
                 e.preventDefault();
@@ -391,9 +406,9 @@ export class SpaceGame {
         this.muzzleFlashTime = 0.05;
     }
 
-    async connect(serverUrl: string, playerName: string, team?: 'red' | 'blue', mode?: string) {
+    async connect(serverUrl: string, playerName: string, team?: 'red' | 'blue', mode?: string, botBehavior?: string) {
         await this.client.connect(serverUrl);
-        this.client.join(playerName, team, mode);
+        this.client.join(playerName, team, mode, botBehavior);
     }
 
     start() {
@@ -538,8 +553,8 @@ export class SpaceGame {
         if (this.keys.has('q')) input.roll = 1;
         if (this.keys.has('e')) input.roll = -1;
 
-        // Boost
-        if (this.keys.has('control')) {
+        // Boost (B key instead of Ctrl to avoid browser shortcuts)
+        if (this.keys.has('b')) {
             input.boost = true;
             if (!this.isBoosting) {
                 this.isBoosting = true;

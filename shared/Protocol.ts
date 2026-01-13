@@ -74,7 +74,7 @@ export interface GameState {
 
 // Client -> Server events
 export interface ClientToServerEvents {
-    'player:join': (data: { name: string; team?: 'red' | 'blue'; mode?: string }) => void;
+    'player:join': (data: { name: string; team?: 'red' | 'blue'; mode?: string; botBehavior?: string }) => void;
     'player:input': (data: PlayerInput) => void;
     'player:shoot': (data: ShootInput) => void;
     'player:respawn': () => void;

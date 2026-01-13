@@ -100,9 +100,9 @@ export class GameClient {
         });
     }
 
-    join(name: string, team?: 'red' | 'blue', mode?: string) {
+    join(name: string, team?: 'red' | 'blue', mode?: string, botBehavior?: string) {
         if (!this.socket) return;
-        this.socket.emit('player:join', { name, team, mode });
+        this.socket.emit('player:join', { name, team, mode, botBehavior });
     }
 
     sendInput(input: PlayerInput) {

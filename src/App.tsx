@@ -95,6 +95,18 @@ const App: React.FC = () => {
         onRespawn: () => {
             setIsAlive(true);
         },
+        // Radar callbacks
+        onPlayersUpdate: (playerList, localId) => {
+            setPlayers(playerList);
+            setPlayerId(localId);
+        },
+        onPositionUpdate: (x, z, rotation) => {
+            setPlayerPosition({ x, z });
+            setPlayerRotation(rotation);
+        },
+        onPowerUpsUpdate: (powerUpData) => {
+            setPowerUps(powerUpData);
+        },
     }), []);
 
     // Handle game state updates

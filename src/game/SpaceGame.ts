@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { PlayerShip } from './PlayerShip';
 import { RemotePlayer } from './RemotePlayer';
 import { Projectile } from './Projectile';
+import { Explosion } from './Explosion';
 import { Environment, ArenaType } from './Environment';
 import { GameClient } from '../network/GameClient';
 import { PlayerState, ProjectileState, SerializedGameState, PlayerInput, GAME_CONSTANTS, ProjectileType } from '../../shared/Protocol';
@@ -20,6 +21,10 @@ export interface GameCallbacks {
     onRespawn: () => void;
     onWeaponChange?: (weapon: ProjectileType) => void;
     onBoostChange?: (isBoosting: boolean) => void;
+    // Radar/minimap callbacks
+    onPlayersUpdate?: (players: PlayerState[], localPlayerId: string) => void;
+    onPositionUpdate?: (x: number, z: number, rotation: number) => void;
+    onPowerUpsUpdate?: (powerUps: { id: string; type: string; x: number; z: number; isActive: boolean }[]) => void;
 }
 
 export class SpaceGame {
@@ -72,6 +77,9 @@ export class SpaceGame {
     // Muzzle flash
     private muzzleFlash: THREE.PointLight | null = null;
     private muzzleFlashTime: number = 0;
+
+    // Explosions
+    private explosions: Explosion[] = [];
 
     // Ship color and arena
     private shipColor: string;
@@ -196,28 +204,52 @@ export class SpaceGame {
             if (data.targetId === this.playerId) {
                 this.callbacks.onHealthUpdate(data.newHealth, 0);
                 this.player.showDamageEffect();
-                this.triggerScreenShake(0.5); // Screen shake on hit
+                this.triggerScreenShake(0.5);
             }
+            // Note: Hit visual feedback handled by health bar update on enemy
         };
 
         this.client.onPlayerKilled = (data) => {
+            console.log('Player killed:', data.victimName, 'by', data.killerName);
             this.callbacks.onKillFeed(data.killerName, data.victimName, data.weapon);
+
+            // Create explosion at the exact death position from server
+            // This fixes the issue where client might have removed the player entity already
+            if (data.position) {
+                console.log('Creating explosion at server position', data.position);
+                const explosion = new Explosion(this.scene, new THREE.Vector3(data.position.x, data.position.y, data.position.z));
+                this.explosions.push(explosion);
+                this.triggerScreenShake(0.8);
+            } else {
+                // Fallback (shouldn't happen with new protocol)
+                const victim = this.remotePlayers.get(data.victimId);
+                if (victim) {
+                    const pos = victim.getPosition();
+                    const explosion = new Explosion(this.scene, pos);
+                    this.explosions.push(explosion);
+                }
+            }
 
             if (data.victimId === this.playerId) {
                 this.isAlive = false;
                 this.callbacks.onDeath();
                 this.triggerScreenShake(1.5); // Big shake on death
+
+                // Ensure player hidden
+                this.player.setVisible(false);
             }
         };
 
         this.client.onPlayerRespawned = (player) => {
             if (player.id === this.playerId) {
                 this.isAlive = true;
+                this.player.setVisible(true);
                 this.player.setPosition(player.position.x, player.position.y, player.position.z);
                 this.callbacks.onRespawn();
                 this.callbacks.onHealthUpdate(player.health, player.shield);
             }
         };
+
 
         this.client.onChatMessage = (data) => {
             this.callbacks.onChatMessage(data.playerName, data.message);
@@ -251,9 +283,14 @@ export class SpaceGame {
         const currentProjIds = new Set(state.projectiles.map(p => p.id));
 
         for (const projState of state.projectiles) {
-            if (!this.projectiles.has(projState.id)) {
-                const projectile = new Projectile(this.scene, projState);
-                this.projectiles.set(projState.id, projectile);
+            let proj = this.projectiles.get(projState.id);
+            if (!proj) {
+                // Create new projectile
+                proj = new Projectile(this.scene, projState);
+                this.projectiles.set(projState.id, proj);
+            } else {
+                // Update existing projectile position from server
+                proj.updatePosition(projState.position.x, projState.position.y, projState.position.z);
             }
         }
 
@@ -263,6 +300,20 @@ export class SpaceGame {
                 this.projectiles.delete(id);
             }
         }
+
+        // Update radar/minimap with player data
+        const allPlayers = Object.values(state.players);
+        this.callbacks.onPlayersUpdate?.(allPlayers, this.playerId);
+
+        // Update power-ups for minimap
+        const powerUpData = state.powerUps.map(p => ({
+            id: p.id,
+            type: p.type,
+            x: p.position.x,
+            z: p.position.z,
+            isActive: p.isActive,
+        }));
+        this.callbacks.onPowerUpsUpdate?.(powerUpData);
     }
 
     private addRemotePlayer(playerState: PlayerState): RemotePlayer {
@@ -436,11 +487,16 @@ export class SpaceGame {
         if (this.isAlive) {
             this.processInput(delta);
             this.player.update(delta, time);
+
+            // Update position for radar
+            const pos = this.player.getPosition();
+            const rot = this.player.getRotationY();
+            this.callbacks.onPositionUpdate?.(pos.x, pos.z, rot);
         }
 
         // Update remote players
         for (const remote of this.remotePlayers.values()) {
-            remote.update(delta, time);
+            remote.update(delta, time, this.camera);
         }
 
         // Update projectiles
@@ -459,6 +515,14 @@ export class SpaceGame {
 
         // Update speed lines
         this.updateSpeedLines(delta);
+
+        // Update explosions
+        for (let i = this.explosions.length - 1; i >= 0; i--) {
+            const stillActive = this.explosions[i].update(delta);
+            if (!stillActive) {
+                this.explosions.splice(i, 1);
+            }
+        }
 
         // Render
         this.renderer.render(this.scene, this.camera);
@@ -589,8 +653,76 @@ export class SpaceGame {
 
             if (now - this.lastShootTime >= cooldown) {
                 this.lastShootTime = now;
-                const direction = this.player.getForwardDirection();
+                let direction = this.player.getForwardDirection();
+                const playerPos = this.player.getPosition();
+
+                // Auto-aim: Find closest enemy near crosshair and adjust direction
+                const autoAimAngle = 0.3; // ~17 degrees cone
+                let closestEnemy: THREE.Vector3 | null = null;
+                let closestDot = Math.cos(autoAimAngle);
+
+                for (const remote of this.remotePlayers.values()) {
+                    if (!remote.playerState.isAlive) continue;
+
+                    const enemyPos = remote.getPosition();
+                    const toEnemy = new THREE.Vector3(
+                        enemyPos.x - playerPos.x,
+                        enemyPos.y - playerPos.y,
+                        enemyPos.z - playerPos.z
+                    );
+                    const dist = toEnemy.length();
+                    if (dist > 300) continue; // Max auto-aim range
+
+                    toEnemy.normalize();
+                    const forwardVec = new THREE.Vector3(direction.x, direction.y, direction.z);
+                    const dot = forwardVec.dot(toEnemy);
+
+                    if (dot > closestDot) {
+                        closestDot = dot;
+                        closestEnemy = toEnemy;
+                    }
+                }
+
+                // If enemy found near crosshair, blend toward them
+                if (closestEnemy) {
+                    const blendAmount = 0.4; // 40% auto-aim assist
+                    direction = {
+                        x: direction.x * (1 - blendAmount) + closestEnemy.x * blendAmount,
+                        y: direction.y * (1 - blendAmount) + closestEnemy.y * blendAmount,
+                        z: direction.z * (1 - blendAmount) + closestEnemy.z * blendAmount,
+                    };
+                    // Normalize
+                    const len = Math.sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
+                    direction.x /= len;
+                    direction.y /= len;
+                    direction.z /= len;
+                }
+
+                // Send to server
                 this.client.shoot(this.currentWeapon, direction);
+
+                // Create instant local projectile for immediate visual feedback
+                const speed = this.currentWeapon === 'missile' ? 80 : this.currentWeapon === 'plasma' ? 120 : 200;
+                const localProjectile = new Projectile(this.scene, {
+                    id: `local_${now}`,
+                    ownerId: this.playerId,
+                    type: this.currentWeapon,
+                    position: { x: playerPos.x, y: playerPos.y, z: playerPos.z },
+                    velocity: { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
+                    damage: 0,
+                    createdAt: now,
+                });
+                this.projectiles.set(`local_${now}`, localProjectile);
+
+                // Remove local projectile after a short time (server will provide the real one)
+                setTimeout(() => {
+                    const proj = this.projectiles.get(`local_${now}`);
+                    if (proj) {
+                        proj.dispose();
+                        this.projectiles.delete(`local_${now}`);
+                    }
+                }, 500);
+
                 this.triggerMuzzleFlash();
 
                 // Small shake when shooting

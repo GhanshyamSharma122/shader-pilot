@@ -12,6 +12,9 @@ export class RemotePlayer {
     private shipGroup: THREE.Group;
     private engineGlow: THREE.PointLight;
     private nameLabel: THREE.Sprite;
+    private healthBar: THREE.Group;
+    private healthBarFill: THREE.Mesh;
+    private healthBarBg: THREE.Mesh;
 
     private targetPosition = new THREE.Vector3();
     private targetRotation = new THREE.Quaternion();
@@ -39,6 +42,35 @@ export class RemotePlayer {
         this.nameLabel = this.createNameLabel(state.name, state.team);
         this.nameLabel.position.set(0, 5, 0);
         this.group.add(this.nameLabel);
+
+        // Health bar
+        this.healthBar = new THREE.Group();
+        this.healthBar.position.set(0, 7, 0);
+
+        // Health bar background (dark)
+        const bgGeom = new THREE.PlaneGeometry(6, 0.6);
+        const bgMat = new THREE.MeshBasicMaterial({
+            color: 0x222222,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide,
+        });
+        this.healthBarBg = new THREE.Mesh(bgGeom, bgMat);
+        this.healthBar.add(this.healthBarBg);
+
+        // Health bar fill (colored based on health)
+        const fillGeom = new THREE.PlaneGeometry(5.8, 0.4);
+        const fillMat = new THREE.MeshBasicMaterial({
+            color: 0x00ff00,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide,
+        });
+        this.healthBarFill = new THREE.Mesh(fillGeom, fillMat);
+        this.healthBarFill.position.z = 0.01; // Slightly in front
+        this.healthBar.add(this.healthBarFill);
+
+        this.group.add(this.healthBar);
 
         scene.add(this.group);
     }
@@ -184,15 +216,45 @@ export class RemotePlayer {
 
         // Update visibility
         this.group.visible = state.isAlive;
+
+        // Update health bar
+        const maxHealth = 100;
+        const healthPercent = Math.max(0, Math.min(1, state.health / maxHealth));
+
+        // Scale the fill bar based on health (scale X from center)
+        this.healthBarFill.scale.x = healthPercent;
+        this.healthBarFill.position.x = (healthPercent - 1) * 2.9; // Align to left
+
+        // Change color based on health: green > yellow > orange > red
+        const fillMat = this.healthBarFill.material as THREE.MeshBasicMaterial;
+        if (healthPercent > 0.6) {
+            fillMat.color.setHex(0x00ff00); // Green
+        } else if (healthPercent > 0.4) {
+            fillMat.color.setHex(0xffff00); // Yellow
+        } else if (healthPercent > 0.2) {
+            fillMat.color.setHex(0xff8800); // Orange
+        } else {
+            fillMat.color.setHex(0xff0000); // Red
+        }
     }
 
-    update(delta: number, time: number) {
+    update(delta: number, time: number, camera?: THREE.Camera) {
         // Smooth interpolation
         this.group.position.lerp(this.targetPosition, 0.15);
         this.group.quaternion.slerp(this.targetRotation, 0.15);
 
         // Animate engine glow
         this.engineGlow.intensity = 3 + Math.sin(time * 10) * 0.8;
+
+        // Billboard effect - make health bar and name always face camera
+        if (camera) {
+            this.healthBar.quaternion.copy(camera.quaternion);
+            this.nameLabel.quaternion.copy(camera.quaternion);
+        }
+    }
+
+    getPosition(): THREE.Vector3 {
+        return this.group.position.clone();
     }
 
     dispose() {
@@ -207,5 +269,11 @@ export class RemotePlayer {
         });
         (this.nameLabel.material as THREE.SpriteMaterial).map?.dispose();
         (this.nameLabel.material as THREE.Material).dispose();
+
+        // Cleanup health bar
+        this.healthBarBg.geometry.dispose();
+        (this.healthBarBg.material as THREE.Material).dispose();
+        this.healthBarFill.geometry.dispose();
+        (this.healthBarFill.material as THREE.Material).dispose();
     }
 }

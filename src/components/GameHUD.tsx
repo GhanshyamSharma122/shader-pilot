@@ -118,84 +118,18 @@ export const GameHUD: React.FC<HUDProps> = ({
             {/* Crosshair */}
             {isAlive && (
                 <div className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none">
-                    <div className="relative" style={{ width: '80px', height: '80px' }}>
-                        {/* Outer ring */}
-                        <div
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-400/60"
-                            style={{ width: '60px', height: '60px', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }}
-                        />
-                        {/* Inner circle */}
-                        <div
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pink-400/70"
-                            style={{ width: '24px', height: '24px' }}
-                        />
+                    <svg width="40" height="40" viewBox="0 0 40 40" style={{ filter: 'drop-shadow(0 0 4px rgba(0, 255, 255, 0.8))' }}>
                         {/* Center dot */}
-                        <div
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400"
-                            style={{
-                                width: '6px',
-                                height: '6px',
-                                boxShadow: '0 0 8px rgba(34, 211, 238, 0.8), 0 0 16px rgba(34, 211, 238, 0.4)'
-                            }}
-                        />
-                        {/* Cross lines - Top */}
-                        <div
-                            className="absolute left-1/2 -translate-x-1/2 bg-cyan-400"
-                            style={{
-                                top: '2px',
-                                width: '2px',
-                                height: '16px',
-                                boxShadow: '0 0 4px rgba(34, 211, 238, 0.6)'
-                            }}
-                        />
-                        {/* Cross lines - Bottom */}
-                        <div
-                            className="absolute left-1/2 -translate-x-1/2 bg-cyan-400"
-                            style={{
-                                bottom: '2px',
-                                width: '2px',
-                                height: '16px',
-                                boxShadow: '0 0 4px rgba(34, 211, 238, 0.6)'
-                            }}
-                        />
-                        {/* Cross lines - Left */}
-                        <div
-                            className="absolute top-1/2 -translate-y-1/2 bg-cyan-400"
-                            style={{
-                                left: '2px',
-                                width: '16px',
-                                height: '2px',
-                                boxShadow: '0 0 4px rgba(34, 211, 238, 0.6)'
-                            }}
-                        />
-                        {/* Cross lines - Right */}
-                        <div
-                            className="absolute top-1/2 -translate-y-1/2 bg-cyan-400"
-                            style={{
-                                right: '2px',
-                                width: '16px',
-                                height: '2px',
-                                boxShadow: '0 0 4px rgba(34, 211, 238, 0.6)'
-                            }}
-                        />
-                        {/* Corner markers - diagonal accents */}
-                        <div
-                            className="absolute bg-pink-400/60"
-                            style={{ top: '8px', left: '8px', width: '8px', height: '2px', transform: 'rotate(-45deg)' }}
-                        />
-                        <div
-                            className="absolute bg-pink-400/60"
-                            style={{ top: '8px', right: '8px', width: '8px', height: '2px', transform: 'rotate(45deg)' }}
-                        />
-                        <div
-                            className="absolute bg-pink-400/60"
-                            style={{ bottom: '8px', left: '8px', width: '8px', height: '2px', transform: 'rotate(45deg)' }}
-                        />
-                        <div
-                            className="absolute bg-pink-400/60"
-                            style={{ bottom: '8px', right: '8px', width: '8px', height: '2px', transform: 'rotate(-45deg)' }}
-                        />
-                    </div>
+                        <circle cx="20" cy="20" r="3" fill="#00ffff" />
+                        {/* Top line */}
+                        <line x1="20" y1="5" x2="20" y2="14" stroke="#00ffff" strokeWidth="2" strokeLinecap="round" />
+                        {/* Bottom line */}
+                        <line x1="20" y1="26" x2="20" y2="35" stroke="#00ffff" strokeWidth="2" strokeLinecap="round" />
+                        {/* Left line */}
+                        <line x1="5" y1="20" x2="14" y2="20" stroke="#00ffff" strokeWidth="2" strokeLinecap="round" />
+                        {/* Right line */}
+                        <line x1="26" y1="20" x2="35" y2="20" stroke="#00ffff" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
                 </div>
             )}
         </>

@@ -282,6 +282,19 @@ export class GameState {
     private updateBots(deltaTime: number): void {
         const now = Date.now();
 
+        // In practice mode, find the active attacking bot (only one attacks at a time)
+        let activeAttackingBot: string | null = null;
+        if (this.isPracticeMode) {
+            // Find the first alive bot to be the attacker
+            for (const [botId, botState] of this.bots) {
+                const bot = this.players.get(botId);
+                if (bot && bot.isAlive) {
+                    activeAttackingBot = botId;
+                    break;
+                }
+            }
+        }
+
         this.bots.forEach((botState, botId) => {
             const bot = this.players.get(botId);
             if (!bot) return;
@@ -304,6 +317,16 @@ export class GameState {
                 bot.velocity.z = 0;
                 return;
             }
+
+            // In practice mode, only the active bot attacks - others wait
+            if (this.isPracticeMode && activeAttackingBot !== botId) {
+                // Wait in a holding position
+                bot.velocity.x *= 0.9;
+                bot.velocity.y *= 0.9;
+                bot.velocity.z *= 0.9;
+                return;
+            }
+
             let nearestPlayer: PlayerState | null = null;
             let nearestDistance = Infinity;
 
@@ -327,9 +350,11 @@ export class GameState {
                 botState.changeDirectionTime = now + 2000 + Math.random() * 3000;
             }
 
-            const botSpeed = 25;
+            // In practice mode, bots always chase player and move slower
+            const botSpeed = this.isPracticeMode ? 20 : 25;
+            const chaseRange = this.isPracticeMode ? 1000 : 300; // Always chase in practice
 
-            if (nearestPlayer && nearestDistance < 300) {
+            if (nearestPlayer && nearestDistance < chaseRange) {
                 // Chase player
                 const target = nearestPlayer as PlayerState;
                 const dx = target.position.x - bot.position.x;
@@ -346,8 +371,11 @@ export class GameState {
                     bot.rotation.y = Math.atan2(dx, dz);
                 }
 
-                // Shoot at player
-                if (nearestDistance < 200 && now - botState.lastShootTime > 500) {
+                // Shoot at player (slower rate in practice mode)
+                const shootRange = this.isPracticeMode ? 150 : 200;
+                const shootCooldown = this.isPracticeMode ? 800 : 500;
+
+                if (nearestDistance < shootRange && now - botState.lastShootTime > shootCooldown) {
                     botState.lastShootTime = now;
 
                     const direction = {
@@ -429,7 +457,7 @@ export class GameState {
                 const dz = player.position.z - proj.position.z;
                 const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-                if (distance < 10) {
+                if (distance < 15) { // Increased collision radius from 10 to 15
                     projectilesToRemove.push(proj.id);
 
                     let damage = proj.damage;
@@ -468,6 +496,7 @@ export class GameState {
                             victimName: player.name,
                             killerName: attacker?.name || 'Unknown',
                             weapon: proj.type,
+                            position: { ...player.position }, // Send death position
                         });
                     }
                 }
@@ -557,6 +586,7 @@ interface KillResult {
     victimName: string;
     killerName: string;
     weapon: ProjectileType;
+    position: Vector3;
 }
 
 interface PowerUpCollectResult {

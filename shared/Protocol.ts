@@ -144,6 +144,7 @@ export interface KillData {
     victimName: string;
     killerName: string;
     weapon: ProjectileType;
+    position: Vector3; // Position where death occurred
 }
 
 // Power-up collected

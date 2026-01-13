@@ -50,63 +50,85 @@ export class Projectile {
     } {
         let color: number;
         let coreLength: number;
-        let glowSize: number;
+        let coreRadius: number;
+        let glowRadius: number;
         let lightIntensity: number;
+        let lightDistance: number;
 
         switch (type) {
             case 'missile':
                 color = 0xff6600;
-                coreLength = 1.5;
-                glowSize = 0.8;
-                lightIntensity = 3;
+                coreLength = 4;
+                coreRadius = 0.3;
+                glowRadius = 0.6;
+                lightIntensity = 8;
+                lightDistance = 40;
                 break;
 
             case 'plasma':
                 color = 0xff00ff;
-                coreLength = 0.8;
-                glowSize = 1.2;
-                lightIntensity = 4;
+                coreLength = 3;
+                coreRadius = 0.4;
+                glowRadius = 0.8;
+                lightIntensity = 10;
+                lightDistance = 50;
                 break;
 
             default: // laser
                 color = 0x00ffff;
-                coreLength = 2;
-                glowSize = 0.5;
-                lightIntensity = 2;
+                coreLength = 5;
+                coreRadius = 0.2;
+                glowRadius = 0.5;
+                lightIntensity = 6;
+                lightDistance = 35;
         }
 
-        // Core beam
-        const coreGeom = new THREE.CylinderGeometry(0.05, 0.05, coreLength, 8);
+        // Core beam - bright white center
+        const coreGeom = new THREE.CylinderGeometry(coreRadius, coreRadius, coreLength, 8);
         coreGeom.rotateX(Math.PI / 2);
         const coreMat = new THREE.MeshBasicMaterial({
             color: 0xffffff,
         });
         const core = new THREE.Mesh(coreGeom, coreMat);
 
-        // Outer glow
-        const glowGeom = new THREE.CylinderGeometry(0.15, 0.1, coreLength * 1.2, 8);
+        // Outer glow - larger and more visible
+        const glowGeom = new THREE.CylinderGeometry(glowRadius, glowRadius * 0.7, coreLength * 1.5, 8);
         glowGeom.rotateX(Math.PI / 2);
         const glowMat = new THREE.MeshBasicMaterial({
             color,
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.8,
             blending: THREE.AdditiveBlending,
         });
         const glow = new THREE.Mesh(glowGeom, glowMat);
 
-        // Point light
-        const light = new THREE.PointLight(color, lightIntensity, 15);
+        // Point light - brighter and further reaching
+        const light = new THREE.PointLight(color, lightIntensity, lightDistance);
         light.position.z = coreLength / 2;
 
         return { core, glow, light };
     }
 
     update(delta: number) {
+        // Move projectile based on velocity (local interpolation)
+        this.group.position.x += this.velocity.x * delta;
+        this.group.position.y += this.velocity.y * delta;
+        this.group.position.z += this.velocity.z * delta;
+
         // Pulse effect
         const time = Date.now() * 0.01;
         const pulse = 0.8 + Math.sin(time) * 0.2;
-        this.light.intensity = 2 * pulse;
-        (this.glowMesh.material as THREE.MeshBasicMaterial).opacity = 0.5 + pulse * 0.2;
+        this.light.intensity = 6 * pulse;
+        (this.glowMesh.material as THREE.MeshBasicMaterial).opacity = 0.7 + pulse * 0.2;
+    }
+
+    // Update position from server state
+    updatePosition(x: number, y: number, z: number) {
+        this.group.position.set(x, y, z);
+    }
+
+    getPosition(): THREE.Vector3 {
+        return this.group.position.clone();
     }
 
     dispose() {

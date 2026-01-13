@@ -425,82 +425,146 @@ export class GameState {
         const projectilesToRemove: string[] = [];
 
         this.projectiles.forEach(proj => {
-            proj.position.x += proj.velocity.x * deltaTime;
-            proj.position.y += proj.velocity.y * deltaTime;
-            proj.position.z += proj.velocity.z * deltaTime;
+            // Calculate new position
+            const moveX = proj.velocity.x * deltaTime;
+            const moveY = proj.velocity.y * deltaTime;
+            const moveZ = proj.velocity.z * deltaTime;
 
-            if (now - proj.createdAt > 5000) {
-                projectilesToRemove.push(proj.id);
-                return;
+            const nextX = proj.position.x + moveX;
+            const nextY = proj.position.y + moveY;
+            const nextZ = proj.position.z + moveZ;
+
+            // Check collision with players using Ray-Sphere intersection (Continuous Collision Detection)
+            let hitPlayer: PlayerState | null = null;
+            let hitDist = Infinity;
+
+            const rayOrigin = { ...proj.position };
+            const rayDir = { x: proj.velocity.x, y: proj.velocity.y, z: proj.velocity.z };
+            // Normalize direction
+            const speed = Math.sqrt(rayDir.x * rayDir.x + rayDir.y * rayDir.y + rayDir.z * rayDir.z);
+            if (speed > 0) {
+                rayDir.x /= speed;
+                rayDir.y /= speed;
+                rayDir.z /= speed;
             }
+            const moveDist = Math.sqrt(moveX * moveX + moveY * moveY + moveZ * moveZ);
 
-            const bounds = GAME_CONSTANTS.WORLD_SIZE / 2;
-            if (Math.abs(proj.position.x) > bounds ||
-                Math.abs(proj.position.y) > bounds ||
-                Math.abs(proj.position.z) > bounds) {
-                projectilesToRemove.push(proj.id);
-                return;
-            }
+            // Collision radius
+            const hitRadius = 30; // Increased even more (was 18)
 
-            // Check collision with players
-            this.players.forEach(player => {
-                if (!player.isAlive) return;
-                if (player.id === proj.ownerId) return;
+            for (const [playerId, player] of this.players) {
+                if (!player.isAlive) continue;
+                if (player.id === proj.ownerId) continue;
 
                 if (this.gameMode === 'team') {
                     const owner = this.players.get(proj.ownerId);
-                    if (owner && owner.team === player.team) return;
+                    if (owner && owner.team === player.team) continue;
                 }
 
-                const dx = player.position.x - proj.position.x;
-                const dy = player.position.y - proj.position.y;
-                const dz = player.position.z - proj.position.z;
-                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                // Simplified Segment-Sphere Test
+                // Vector from projectile to player
+                const dx = player.position.x - rayOrigin.x;
+                const dy = player.position.y - rayOrigin.y;
+                const dz = player.position.z - rayOrigin.z;
 
-                if (distance < 15) { // Increased collision radius from 10 to 15
-                    projectilesToRemove.push(proj.id);
+                // Project player onto ray
+                const t = dx * rayDir.x + dy * rayDir.y + dz * rayDir.z;
 
-                    let damage = proj.damage;
-                    if (player.shield > 0) {
-                        const shieldDamage = Math.min(player.shield, damage);
-                        player.shield -= shieldDamage;
-                        damage -= shieldDamage;
+                // Find closest point on ray to player center
+                let closestX, closestY, closestZ;
+                let distAlongRay;
+
+                if (t <= 0) {
+                    closestX = rayOrigin.x;
+                    closestY = rayOrigin.y;
+                    closestZ = rayOrigin.z;
+                    distAlongRay = 0;
+                } else if (t >= moveDist) {
+                    closestX = nextX;
+                    closestY = nextY;
+                    closestZ = nextZ;
+                    distAlongRay = moveDist;
+                } else {
+                    closestX = rayOrigin.x + rayDir.x * t;
+                    closestY = rayOrigin.y + rayDir.y * t;
+                    closestZ = rayOrigin.z + rayDir.z * t;
+                    distAlongRay = t;
+                }
+
+                // Distance squared from closest point to player center
+                const distSq = (player.position.x - closestX) ** 2 +
+                    (player.position.y - closestY) ** 2 +
+                    (player.position.z - closestZ) ** 2;
+
+                if (distSq < hitRadius * hitRadius) {
+                    // We have a hit!
+                    // Check if this is the closest hit so far
+                    if (distAlongRay < hitDist) {
+                        hitDist = distAlongRay;
+                        hitPlayer = player as PlayerState;
                     }
-                    player.health -= damage;
+                }
+            }
 
-                    hits.push({
-                        targetId: player.id,
-                        attackerId: proj.ownerId,
-                        damage: proj.damage,
-                        newHealth: player.health,
-                    });
+            if (hitPlayer) {
+                // Register Hit
+                projectilesToRemove.push(proj.id);
 
-                    if (player.health <= 0) {
-                        player.health = 0;
-                        player.isAlive = false;
-                        player.deaths++;
+                let damage = proj.damage;
+                if (hitPlayer.shield > 0) {
+                    const shieldDamage = Math.min(hitPlayer.shield, damage);
+                    hitPlayer.shield -= shieldDamage;
+                    damage -= shieldDamage;
+                }
+                hitPlayer.health -= damage;
 
-                        const attacker = this.players.get(proj.ownerId);
-                        if (attacker) {
-                            attacker.kills++;
-                            attacker.score += 100;
+                hits.push({
+                    targetId: hitPlayer.id,
+                    attackerId: proj.ownerId,
+                    damage: proj.damage,
+                    newHealth: hitPlayer.health,
+                });
 
-                            if (this.gameMode === 'team' && attacker.team) {
-                                this.teamScores[attacker.team]++;
-                            }
+                if (hitPlayer.health <= 0) {
+                    hitPlayer.health = 0;
+                    hitPlayer.isAlive = false;
+                    hitPlayer.deaths++;
+
+                    const attacker = this.players.get(proj.ownerId);
+                    if (attacker) {
+                        attacker.kills++;
+                        attacker.score += 100;
+
+                        if (this.gameMode === 'team' && attacker.team) {
+                            this.teamScores[attacker.team]++;
                         }
+                    }
 
-                        kills.push({
-                            victimId: player.id,
-                            killerId: proj.ownerId,
-                            victimName: player.name,
-                            killerName: attacker?.name || 'Unknown',
-                            weapon: proj.type,
-                            position: { ...player.position }, // Send death position
-                        });
+                    kills.push({
+                        victimId: hitPlayer.id,
+                        killerId: proj.ownerId,
+                        victimName: hitPlayer.name,
+                        killerName: attacker?.name || 'Unknown',
+                        weapon: proj.type,
+                        position: { ...hitPlayer.position },
+                    });
+                }
+            } else {
+                // No hit, verify bounds and timeout
+                if (now - proj.createdAt > 5000) {
+                    projectilesToRemove.push(proj.id);
+                } else {
+                    const bounds = GAME_CONSTANTS.WORLD_SIZE / 2;
+                    if (Math.abs(nextX) > bounds || Math.abs(nextY) > bounds || Math.abs(nextZ) > bounds) {
+                        projectilesToRemove.push(proj.id);
+                    } else {
+                        // All good, update position
+                        proj.position.x = nextX;
+                        proj.position.y = nextY;
+                        proj.position.z = nextZ;
                     }
                 }
-            });
+            }
         });
 
         this.projectiles = this.projectiles.filter(p => !projectilesToRemove.includes(p.id));

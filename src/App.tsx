@@ -70,6 +70,7 @@ const App: React.FC = () => {
     const [gameMode, setGameMode] = useState<'ffa' | 'team' | 'practice'>('ffa');
     const [teamScores, setTeamScores] = useState({ red: 0, blue: 0 });
     const [powerUps, setPowerUps] = useState<{ id: string; type: string; x: number; z: number; isActive: boolean }[]>([]);
+    const [targetStatus, setTargetStatus] = useState<{ name: string; health: number; maxHealth: number; shield: number } | null>(null);
 
     // Refs
     const containerRef = useRef<HTMLDivElement>(null);
@@ -91,6 +92,7 @@ const App: React.FC = () => {
         },
         onDeath: () => {
             setIsAlive(false);
+            setTargetStatus(null);
         },
         onRespawn: () => {
             setIsAlive(true);
@@ -106,6 +108,9 @@ const App: React.FC = () => {
         },
         onPowerUpsUpdate: (powerUpData) => {
             setPowerUps(powerUpData);
+        },
+        onTargetUpdate: (target) => {
+            setTargetStatus(target);
         },
     }), []);
 
@@ -217,6 +222,7 @@ const App: React.FC = () => {
                         deaths={stats.deaths}
                         isAlive={isAlive}
                         killFeed={killFeed}
+                        targetStatus={targetStatus}
                     />
 
                     <Minimap

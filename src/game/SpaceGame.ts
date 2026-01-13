@@ -25,9 +25,63 @@ export interface GameCallbacks {
     onPlayersUpdate?: (players: PlayerState[], localPlayerId: string) => void;
     onPositionUpdate?: (x: number, z: number, rotation: number) => void;
     onPowerUpsUpdate?: (powerUps: { id: string; type: string; x: number; z: number; isActive: boolean }[]) => void;
+    // HUD callbacks
+    onTargetUpdate?: (target: { name: string; health: number; maxHealth: number; shield: number } | null) => void;
 }
 
 export class SpaceGame {
+    // ... existing properties ...
+
+    // Target tracking
+    private currentTargetId: string | null = null;
+    private lastTargetUpdate: number = 0;
+
+    // ...
+
+    // In processInput or update loop
+    private updateTargetTracking() {
+        if (Date.now() - this.lastTargetUpdate < 100) return; // Update UI every 100ms
+        this.lastTargetUpdate = Date.now();
+
+        const playerPos = this.player.getPosition();
+        const direction = this.player.getForwardDirection();
+        const forwardVec = new THREE.Vector3(direction.x, direction.y, direction.z);
+
+        // Find enemy closest to crosshair
+        let bestTarget: RemotePlayer | null = null;
+        let bestDot = 0.86; // ~30 degrees cone for HUD targeting (wider than auto-aim)
+
+        for (const remote of this.remotePlayers.values()) {
+            if (!remote.playerState.isAlive) continue;
+
+            const enemyPos = remote.getPosition();
+            const toEnemy = new THREE.Vector3().subVectors(enemyPos, playerPos);
+            const dist = toEnemy.length();
+
+            if (dist > 2000) continue; // Max target range
+
+            toEnemy.normalize();
+            const dot = forwardVec.dot(toEnemy);
+
+            if (dot > bestDot) {
+                bestDot = dot;
+                bestTarget = remote;
+            }
+        }
+
+        if (bestTarget) {
+            this.currentTargetId = bestTarget.playerState.id;
+            this.callbacks.onTargetUpdate?.({
+                name: bestTarget.playerState.name,
+                health: bestTarget.playerState.health,
+                maxHealth: bestTarget.playerState.maxHealth,
+                shield: bestTarget.playerState.shield
+            });
+        } else {
+            this.currentTargetId = null;
+            this.callbacks.onTargetUpdate?.(null);
+        }
+    }
     private container: HTMLElement;
     private renderer: THREE.WebGLRenderer;
     private scene: THREE.Scene;
@@ -524,6 +578,9 @@ export class SpaceGame {
             }
         }
 
+        // Update target HUD
+        this.updateTargetTracking();
+
         // Render
         this.renderer.render(this.scene, this.camera);
     };
@@ -657,9 +714,10 @@ export class SpaceGame {
                 const playerPos = this.player.getPosition();
 
                 // Auto-aim: Find closest enemy near crosshair and adjust direction
-                const autoAimAngle = 0.3; // ~17 degrees cone
+                const autoAimAngle = 0.5; // ~28 degrees cone (widened from 0.3/17deg)
                 let closestEnemy: THREE.Vector3 | null = null;
                 let closestDot = Math.cos(autoAimAngle);
+                const maxRange = 2000; // Increased range (from 300)
 
                 for (const remote of this.remotePlayers.values()) {
                     if (!remote.playerState.isAlive) continue;
@@ -671,7 +729,7 @@ export class SpaceGame {
                         enemyPos.z - playerPos.z
                     );
                     const dist = toEnemy.length();
-                    if (dist > 300) continue; // Max auto-aim range
+                    if (dist > maxRange) continue;
 
                     toEnemy.normalize();
                     const forwardVec = new THREE.Vector3(direction.x, direction.y, direction.z);
@@ -685,7 +743,7 @@ export class SpaceGame {
 
                 // If enemy found near crosshair, blend toward them
                 if (closestEnemy) {
-                    const blendAmount = 0.4; // 40% auto-aim assist
+                    const blendAmount = 0.6; // 60% auto-aim assist (stronger)
                     direction = {
                         x: direction.x * (1 - blendAmount) + closestEnemy.x * blendAmount,
                         y: direction.y * (1 - blendAmount) + closestEnemy.y * blendAmount,

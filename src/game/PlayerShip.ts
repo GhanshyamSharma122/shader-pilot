@@ -186,13 +186,13 @@ export class PlayerShip {
     }
 
     applyInput(input: PlayerInput, delta: number) {
-        // Movement speed - slightly reduced for more control
-        const baseSpeed = 35;
+        // Movement speed - reduced for more control
+        const baseSpeed = 30;
         const boostMultiplier = input.boost ? 1.8 : 1;
         const speed = baseSpeed * boostMultiplier;
 
-        // Rotation speed - reduced for more precision
-        const rotSpeed = 1.8;
+        // Rotation speed - significantly reduced for precision
+        const rotSpeed = 1.3;
 
         // Get ship's orientation vectors
         const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.shipGroup.quaternion);
@@ -205,20 +205,20 @@ export class PlayerShip {
         thrust.addScaledVector(right, input.strafe * speed);
         thrust.addScaledVector(up, input.vertical * speed * 0.6);
 
-        // Smoother velocity with stronger drag for more stability
-        this.velocity.lerp(thrust, delta * 4);
+        // Heavy drag for stable flight (stops quickly)
+        this.velocity.lerp(thrust, delta * 5);
 
-        // Apply additional drag when no input for quick stopping
+        // Stronger braking when no input
         if (Math.abs(input.forward) < 0.1 && Math.abs(input.strafe) < 0.1 && Math.abs(input.vertical) < 0.1) {
-            this.velocity.multiplyScalar(0.95);
+            this.velocity.multiplyScalar(0.92);
         }
 
         // Apply velocity
         this.shipGroup.position.addScaledVector(this.velocity, delta);
 
-        // Apply rotation with reduced sensitivity
-        const pitchAmount = -input.pitch * rotSpeed * delta * 0.8;
-        const yawAmount = -input.yaw * rotSpeed * delta * 0.8;
+        // Apply rotation with low sensitivity for aiming
+        const pitchAmount = -input.pitch * rotSpeed * delta * 0.6;
+        const yawAmount = -input.yaw * rotSpeed * delta * 0.6;
         const rollAmount = input.roll * rotSpeed * delta * 1.5;
 
         // Apply rotations smoothly
@@ -226,20 +226,17 @@ export class PlayerShip {
         this.shipGroup.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), yawAmount);
         this.shipGroup.rotateOnAxis(new THREE.Vector3(0, 0, 1), rollAmount);
 
-        // Auto-level roll when not actively rolling
+        // Strong auto-level roll when not actively rolling
         if (Math.abs(input.roll) < 0.1) {
-            // Get current euler angles
             const euler = new THREE.Euler().setFromQuaternion(this.shipGroup.quaternion, 'YXZ');
-            // Gradually reduce roll toward zero
-            euler.z *= 0.92;
+            euler.z *= 0.90; // Fast recovery
             this.shipGroup.quaternion.setFromEuler(euler);
         }
 
-        // Auto-level pitch slightly when not actively pitching
+        // Strong auto-level pitch for stability
         if (Math.abs(input.pitch) < 0.05) {
             const euler = new THREE.Euler().setFromQuaternion(this.shipGroup.quaternion, 'YXZ');
-            // Gently level out pitch
-            euler.x *= 0.98;
+            euler.x *= 0.95; // Moderate recovery
             this.shipGroup.quaternion.setFromEuler(euler);
         }
     }

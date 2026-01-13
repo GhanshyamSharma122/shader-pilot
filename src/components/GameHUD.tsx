@@ -14,6 +14,7 @@ interface HUDProps {
     deaths: number;
     isAlive: boolean;
     killFeed: { killerName: string; victimName: string; weapon: string; timestamp: number }[];
+    targetStatus: { name: string; health: number; maxHealth: number; shield: number } | null;
 }
 
 export const GameHUD: React.FC<HUDProps> = ({
@@ -25,6 +26,7 @@ export const GameHUD: React.FC<HUDProps> = ({
     deaths,
     isAlive,
     killFeed,
+    targetStatus,
 }) => {
     const healthPercent = (health / maxHealth) * 100;
     const shieldPercent = (shield / 50) * 100;
@@ -71,6 +73,44 @@ export const GameHUD: React.FC<HUDProps> = ({
                 </div>
             </div>
 
+            {/* Target Status - Left Center */}
+            {targetStatus && (
+                <div className="fixed left-6 top-1/2 -translate-y-1/2 z-40 pointer-events-none">
+                    <div className="bg-gray-900/80 backdrop-blur-sm border border-red-500/50 rounded-lg p-4 w-64 animate-fade-in">
+                        <div className="text-sm text-red-400 font-mono mb-2 uppercase tracking-wider">Target Locked</div>
+                        <div className="text-xl font-bold text-white mb-3 truncate">{targetStatus.name}</div>
+
+                        {/* Target Shield */}
+                        <div className="mb-2">
+                            <div className="flex justify-between text-xs text-cyan-400 mb-1 font-mono">
+                                <span>SHIELD</span>
+                                <span>{Math.round(targetStatus.shield)}</span>
+                            </div>
+                            <div className="h-2 bg-gray-800 rounded-full border border-cyan-500/30 overflow-hidden">
+                                <div
+                                    className="h-full bg-cyan-500 transition-all duration-200"
+                                    style={{ width: `${(targetStatus.shield / 50) * 100}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Target Health */}
+                        <div>
+                            <div className="flex justify-between text-xs text-red-400 mb-1 font-mono">
+                                <span>HULL</span>
+                                <span>{Math.round(targetStatus.health)}</span>
+                            </div>
+                            <div className="h-3 bg-gray-800 rounded-full border border-red-500/30 overflow-hidden">
+                                <div
+                                    className="h-full bg-red-500 transition-all duration-200"
+                                    style={{ width: `${(targetStatus.health / targetStatus.maxHealth) * 100}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Score Display - Top Center */}
             <div className="fixed top-6 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
                 <div className="bg-gray-900/80 backdrop-blur-sm border border-purple-500/50 rounded-lg px-6 py-3 text-center">
@@ -85,19 +125,25 @@ export const GameHUD: React.FC<HUDProps> = ({
                 </div>
             </div>
 
-            {/* Kill Feed - Top Right */}
-            <div className="fixed top-6 right-6 z-40 pointer-events-none">
-                <div className="flex flex-col gap-1">
+            {/* Kill Feed - Top Left (was Top Right) */}
+            <div className="fixed top-6 left-6 z-40 pointer-events-none">
+                <div className="flex flex-col gap-1 items-start">
+                    {/* Kill Feed Items */}
                     {killFeed.slice(-5).map((kill, index) => (
                         <div
                             key={kill.timestamp + index}
-                            className="bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded px-3 py-1 text-sm font-mono animate-fade-in"
+                            className="px-1 text-sm font-mono animate-fade-in drop-shadow-md"
                         >
                             <span className="text-cyan-400">{kill.killerName}</span>
                             <span className="text-gray-500 mx-2">⚡</span>
                             <span className="text-pink-400">{kill.victimName}</span>
                         </div>
                     ))}
+
+                    {/* My Kills Counter */}
+                    <div className="mt-2 text-green-400 font-mono text-sm font-bold px-1 drop-shadow-md">
+                        KILLS: {kills}
+                    </div>
                 </div>
             </div>
 

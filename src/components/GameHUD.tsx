@@ -118,31 +118,86 @@ export const GameHUD: React.FC<HUDProps> = ({
             {/* Crosshair */}
             {isAlive && (
                 <div className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none">
-                    <div className="relative w-12 h-12">
+                    <div className="relative" style={{ width: '80px', height: '80px' }}>
+                        {/* Outer ring */}
+                        <div
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-400/60"
+                            style={{ width: '60px', height: '60px', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }}
+                        />
+                        {/* Inner circle */}
+                        <div
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pink-400/70"
+                            style={{ width: '24px', height: '24px' }}
+                        />
                         {/* Center dot */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-cyan-400 shadow-glow-cyan" />
-                        {/* Cross lines */}
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-cyan-400/70" />
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-cyan-400/70" />
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 w-4 bg-cyan-400/70" />
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 h-0.5 w-4 bg-cyan-400/70" />
+                        <div
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400"
+                            style={{
+                                width: '6px',
+                                height: '6px',
+                                boxShadow: '0 0 8px rgba(34, 211, 238, 0.8), 0 0 16px rgba(34, 211, 238, 0.4)'
+                            }}
+                        />
+                        {/* Cross lines - Top */}
+                        <div
+                            className="absolute left-1/2 -translate-x-1/2 bg-cyan-400"
+                            style={{
+                                top: '2px',
+                                width: '2px',
+                                height: '16px',
+                                boxShadow: '0 0 4px rgba(34, 211, 238, 0.6)'
+                            }}
+                        />
+                        {/* Cross lines - Bottom */}
+                        <div
+                            className="absolute left-1/2 -translate-x-1/2 bg-cyan-400"
+                            style={{
+                                bottom: '2px',
+                                width: '2px',
+                                height: '16px',
+                                boxShadow: '0 0 4px rgba(34, 211, 238, 0.6)'
+                            }}
+                        />
+                        {/* Cross lines - Left */}
+                        <div
+                            className="absolute top-1/2 -translate-y-1/2 bg-cyan-400"
+                            style={{
+                                left: '2px',
+                                width: '16px',
+                                height: '2px',
+                                boxShadow: '0 0 4px rgba(34, 211, 238, 0.6)'
+                            }}
+                        />
+                        {/* Cross lines - Right */}
+                        <div
+                            className="absolute top-1/2 -translate-y-1/2 bg-cyan-400"
+                            style={{
+                                right: '2px',
+                                width: '16px',
+                                height: '2px',
+                                boxShadow: '0 0 4px rgba(34, 211, 238, 0.6)'
+                            }}
+                        />
+                        {/* Corner markers - diagonal accents */}
+                        <div
+                            className="absolute bg-pink-400/60"
+                            style={{ top: '8px', left: '8px', width: '8px', height: '2px', transform: 'rotate(-45deg)' }}
+                        />
+                        <div
+                            className="absolute bg-pink-400/60"
+                            style={{ top: '8px', right: '8px', width: '8px', height: '2px', transform: 'rotate(45deg)' }}
+                        />
+                        <div
+                            className="absolute bg-pink-400/60"
+                            style={{ bottom: '8px', left: '8px', width: '8px', height: '2px', transform: 'rotate(45deg)' }}
+                        />
+                        <div
+                            className="absolute bg-pink-400/60"
+                            style={{ bottom: '8px', right: '8px', width: '8px', height: '2px', transform: 'rotate(-45deg)' }}
+                        />
                     </div>
                 </div>
             )}
-
-            {/* Controls Hint - Bottom Right */}
-            <div className="fixed bottom-6 right-6 z-40 pointer-events-none">
-                <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 text-xs text-gray-400 font-mono">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                        <span>W/A/S/D</span><span className="text-gray-500">Move</span>
-                        <span>Mouse</span><span className="text-gray-500">Aim</span>
-                        <span>Click</span><span className="text-gray-500">Shoot</span>
-                        <span>Q/E</span><span className="text-gray-500">Roll</span>
-                        <span>Space/Shift</span><span className="text-gray-500">Up/Down</span>
-                        <span>Ctrl</span><span className="text-gray-500">Boost</span>
-                    </div>
-                </div>
-            </div>
         </>
     );
 };

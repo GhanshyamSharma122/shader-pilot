@@ -14,6 +14,7 @@ import {
     Vector3,
     Quaternion,
     PowerUpType,
+    ProjectileType,
     GAME_CONSTANTS,
 } from '../shared/Protocol.js';
 
@@ -330,9 +331,10 @@ export class GameState {
 
             if (nearestPlayer && nearestDistance < 300) {
                 // Chase player
-                const dx = nearestPlayer.position.x - bot.position.x;
-                const dy = nearestPlayer.position.y - bot.position.y;
-                const dz = nearestPlayer.position.z - bot.position.z;
+                const target = nearestPlayer as PlayerState;
+                const dx = target.position.x - bot.position.x;
+                const dy = target.position.y - bot.position.y;
+                const dz = target.position.z - bot.position.z;
                 const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
                 if (len > 0) {
@@ -554,7 +556,7 @@ interface KillResult {
     killerId: string;
     victimName: string;
     killerName: string;
-    weapon: string;
+    weapon: ProjectileType;
 }
 
 interface PowerUpCollectResult {

@@ -32,9 +32,9 @@ export class RemotePlayer {
         this.shipGroup = this.createShipMesh(state.team);
         this.group.add(this.shipGroup);
 
-        // Engine glow
+        // Engine glow (reduced intensity for performance)
         const glowColor = state.team === 'red' ? 0xff4444 : state.team === 'blue' ? 0x4444ff : 0xff00ff;
-        this.engineGlow = new THREE.PointLight(glowColor, 3, 20);
+        this.engineGlow = new THREE.PointLight(glowColor, 1, 10);
         this.engineGlow.position.set(0, 0, 2.5);
         this.group.add(this.engineGlow);
 

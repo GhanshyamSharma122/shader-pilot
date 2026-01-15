@@ -163,13 +163,6 @@ export class Environment {
             wing.rotation.z = 0.3;
             hullGroup.add(wing);
 
-            // Fire glow on some wrecks
-            if (Math.random() > 0.5) {
-                const fire = new THREE.PointLight(0xff4400, 1.5, 25);
-                fire.position.set(0, 0, 4);
-                hullGroup.add(fire);
-            }
-
             // Position around arena
             const angle = (i / 5) * Math.PI * 2 + Math.random() * 0.5;
             const radius = 150 + Math.random() * 250;

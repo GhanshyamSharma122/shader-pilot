@@ -61,8 +61,8 @@ export class Projectile {
                 coreLength = 4;
                 coreRadius = 0.3;
                 glowRadius = 0.6;
-                lightIntensity = 8;
-                lightDistance = 40;
+                lightIntensity = 2;  // Reduced from 8
+                lightDistance = 15;   // Reduced from 40
                 break;
 
             case 'plasma':
@@ -70,8 +70,8 @@ export class Projectile {
                 coreLength = 3;
                 coreRadius = 0.4;
                 glowRadius = 0.8;
-                lightIntensity = 10;
-                lightDistance = 50;
+                lightIntensity = 3;   // Reduced from 10
+                lightDistance = 20;   // Reduced from 50
                 break;
 
             default: // laser
@@ -79,8 +79,8 @@ export class Projectile {
                 coreLength = 5;
                 coreRadius = 0.2;
                 glowRadius = 0.5;
-                lightIntensity = 6;
-                lightDistance = 35;
+                lightIntensity = 1.5; // Reduced from 6
+                lightDistance = 12;   // Reduced from 35
         }
 
         // Core beam - bright white center

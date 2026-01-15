@@ -21,27 +21,27 @@ import {
 // Random spawn positions
 const SPAWN_POSITIONS: Vector3[] = [
     { x: 0, y: 0, z: 0 },
-    { x: 500, y: 100, z: 500 },
-    { x: -500, y: -100, z: 500 },
-    { x: 500, y: 50, z: -500 },
-    { x: -500, y: -50, z: -500 },
-    { x: 0, y: 200, z: 800 },
-    { x: 0, y: -200, z: -800 },
-    { x: 800, y: 0, z: 0 },
-    { x: -800, y: 0, z: 0 },
+    { x: 100, y: 20, z: 100 },
+    { x: -100, y: -20, z: 100 },
+    { x: 100, y: 10, z: -100 },
+    { x: -100, y: -10, z: -100 },
+    { x: 0, y: 40, z: 150 },
+    { x: 0, y: -40, z: -150 },
+    { x: 150, y: 0, z: 0 },
+    { x: -150, y: 0, z: 0 },
 ];
 
 // Team spawn positions
 const TEAM_SPAWNS = {
     red: [
-        { x: -800, y: 0, z: 0 },
-        { x: -700, y: 100, z: 200 },
-        { x: -700, y: -100, z: -200 },
+        { x: -150, y: 0, z: 0 },
+        { x: -120, y: 20, z: 50 },
+        { x: -120, y: -20, z: -50 },
     ],
     blue: [
-        { x: 800, y: 0, z: 0 },
-        { x: 700, y: 100, z: 200 },
-        { x: 700, y: -100, z: -200 },
+        { x: 150, y: 0, z: 0 },
+        { x: 120, y: 20, z: 50 },
+        { x: 120, y: -20, z: -50 },
     ],
 };
 
@@ -88,11 +88,11 @@ export class GameState {
     private initPowerUps() {
         const positions: Vector3[] = [
             { x: 0, y: 0, z: 0 },
-            { x: 300, y: 50, z: 300 },
-            { x: -300, y: -50, z: 300 },
-            { x: 300, y: 0, z: -300 },
-            { x: -300, y: 0, z: -300 },
-            { x: 0, y: 150, z: 0 },
+            { x: 80, y: 10, z: 80 },
+            { x: -80, y: -10, z: 80 },
+            { x: 80, y: 0, z: -80 },
+            { x: -80, y: 0, z: -80 },
+            { x: 0, y: 30, z: 0 },
         ];
 
         const types: PowerUpType[] = ['health', 'shield', 'speed', 'rapidfire', 'damage'];
@@ -461,8 +461,8 @@ export class GameState {
             }
             const moveDist = Math.sqrt(moveX * moveX + moveY * moveY + moveZ * moveZ);
 
-            // Collision radius
-            const hitRadius = 50; // Increased to 50 for max reliability debugging
+            // Collision radius - large for reliable hits
+            const hitRadius = 80;
 
             for (const [playerId, player] of this.players) {
                 if (!player.isAlive) continue;

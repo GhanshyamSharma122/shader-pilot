@@ -166,7 +166,7 @@ export interface ChatMessage {
 // Game constants
 export const GAME_CONSTANTS = {
     TICK_RATE: 60,
-    WORLD_SIZE: 2000,
+    WORLD_SIZE: 500,
     MAX_PLAYERS: 16,
 
     // Player

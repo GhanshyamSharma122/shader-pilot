@@ -426,8 +426,8 @@ export class SpaceGame {
         this.container.addEventListener('mousemove', (e) => {
             if (this.mouseLocked) {
                 // Store raw delta, will be used once and reset
-                this.mouseX = e.movementX * 0.003;
-                this.mouseY = e.movementY * 0.003;
+                this.mouseX = e.movementX * 0.012;
+                this.mouseY = e.movementY * 0.012;
             }
         });
 

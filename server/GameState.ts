@@ -227,6 +227,18 @@ export class GameState {
         if (!player || !player.isAlive) return null;
 
         const { type, direction } = shootInput;
+        console.log(`DEBUG: SHOOT ${type} from ${player.name} (pos: ${player.position.x.toFixed(1)},${player.position.z.toFixed(1)})`);
+
+        // Log nearby enemies
+        for (const [otherId, other] of this.players) {
+            if (otherId !== playerId && other.isAlive) {
+                const dx = other.position.x - player.position.x;
+                const dy = other.position.y - player.position.y;
+                const dz = other.position.z - player.position.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                console.log(`   -> Enemy ${other.name} Dist: ${dist.toFixed(1)} Pos: ${other.position.x.toFixed(0)},${other.position.z.toFixed(0)}`);
+            }
+        }
 
         let speed: number, damage: number;
         switch (type) {
@@ -450,7 +462,7 @@ export class GameState {
             const moveDist = Math.sqrt(moveX * moveX + moveY * moveY + moveZ * moveZ);
 
             // Collision radius
-            const hitRadius = 30; // Increased even more (was 18)
+            const hitRadius = 50; // Increased to 50 for max reliability debugging
 
             for (const [playerId, player] of this.players) {
                 if (!player.isAlive) continue;
@@ -495,6 +507,9 @@ export class GameState {
                 const distSq = (player.position.x - closestX) ** 2 +
                     (player.position.y - closestY) ** 2 +
                     (player.position.z - closestZ) ** 2;
+                if (distSq < 25000) { // Log near misses (< 150 units)
+                    console.log(`CHECK: Proj vs ${player.name} Dist=${Math.sqrt(distSq).toFixed(1)} Radius=${hitRadius}`);
+                }
 
                 if (distSq < hitRadius * hitRadius) {
                     // We have a hit!
@@ -511,6 +526,8 @@ export class GameState {
                 projectilesToRemove.push(proj.id);
 
                 let damage = proj.damage;
+                console.log(`🎯 HIT CONFIRMED! Target: ${hitPlayer.name} | Damage: ${damage} | Remaining Health: ${hitPlayer.health}`);
+
                 if (hitPlayer.shield > 0) {
                     const shieldDamage = Math.min(hitPlayer.shield, damage);
                     hitPlayer.shield -= shieldDamage;

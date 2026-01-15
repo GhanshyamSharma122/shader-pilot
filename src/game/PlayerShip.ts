@@ -191,8 +191,8 @@ export class PlayerShip {
         const boostMultiplier = input.boost ? 1.8 : 1;
         const speed = baseSpeed * boostMultiplier;
 
-        // Rotation speed - significantly reduced for precision
-        const rotSpeed = 1.3;
+        // Rotation speed - increased for better responsiveness (was 1.3)
+        const rotSpeed = 1.6;
 
         // Get ship's orientation vectors
         const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.shipGroup.quaternion);
@@ -216,9 +216,9 @@ export class PlayerShip {
         // Apply velocity
         this.shipGroup.position.addScaledVector(this.velocity, delta);
 
-        // Apply rotation with low sensitivity for aiming
-        const pitchAmount = -input.pitch * rotSpeed * delta * 0.6;
-        const yawAmount = -input.yaw * rotSpeed * delta * 0.6;
+        // Apply rotation with higher sensitivity (was 0.6)
+        const pitchAmount = -input.pitch * rotSpeed * delta * 0.9;
+        const yawAmount = -input.yaw * rotSpeed * delta * 0.9;
         const rollAmount = input.roll * rotSpeed * delta * 1.5;
 
         // Apply rotations smoothly

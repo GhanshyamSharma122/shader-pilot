@@ -177,7 +177,7 @@ export const GAME_CONSTANTS = {
     RESPAWN_TIME: 3000,
 
     // Weapons
-    LASER_SPEED: 200,
+    LASER_SPEED: 400,
     LASER_DAMAGE: 15,
     LASER_COOLDOWN: 150,
 
